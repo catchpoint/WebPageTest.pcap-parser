@@ -37,18 +37,32 @@ class Pcap():
     return
 
 
-  def Save(self, out):
+  def SaveStats(self, out):
     file_name, ext = os.path.splitext(out)
     if ext.lower() == '.gz':
       f = gzip.open(out, 'wb')
     else:
       f = open(out, 'wb')
     try:
-      result = {"bytes": self.bytes, "slices": self.slices}
+      result = {"bytes": self.bytes}
       json.dump(result, f)
-      logging.info('Results written to {0}'.format(out))
+      logging.info('Result stats written to {0}'.format(out))
     except:
-      logging.critical('Error writing results to {0}'.format(out))
+      logging.critical('Error writing result stats to {0}'.format(out))
+    f.close()
+
+
+  def SaveDetails(self, out):
+    file_name, ext = os.path.splitext(out)
+    if ext.lower() == '.gz':
+      f = gzip.open(out, 'wb')
+    else:
+      f = open(out, 'wb')
+    try:
+      json.dump(self.slices, f)
+      logging.info('Result details written to {0}'.format(out))
+    except:
+      logging.critical('Error writing result details to {0}'.format(out))
     f.close()
 
 
@@ -337,7 +351,8 @@ def main():
   parser.add_argument('-v', '--verbose', action='count',
                       help="Increase verbosity (specify multiple times for more). -vvvv for full debug output.")
   parser.add_argument('-i', '--input', help="Input pcap file.")
-  parser.add_argument('-o', '--output', help="Output bandwidth information file.")
+  parser.add_argument('-s', '--stats', help="Output bandwidth information file.")
+  parser.add_argument('-d', '--details', help="Output bandwidth details file (time sliced bandwidth data).")
   options = parser.parse_args()
 
   # Set up logging
@@ -359,14 +374,15 @@ def main():
   pcap = Pcap()
   pcap.Process(options.input)
 
+  if options.stats:
+    pcap.SaveStats(options.stats)
+  if options.details:
+    pcap.SaveDetails(options.details)
+  pcap.Print()
+
   end = time.time()
   elapsed = end - start
   logging.debug("Elapsed Time: {0:0.4f}".format(elapsed))
-
-  pcap.Print()
-  if options.output:
-    pcap.Save(options.output)
-
 
 if '__main__' == __name__:
   main()
