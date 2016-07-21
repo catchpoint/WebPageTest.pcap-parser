@@ -22,6 +22,9 @@ import os
 import struct
 import time
 
+#Globals
+options = None
+
 
 ########################################################################################################################
 #   Pcap processing
@@ -67,9 +70,13 @@ class Pcap():
 
 
   def Print(self):
-    print "Bytes Out: {0:d}".format(self.bytes['out'])
-    print "Bytes In:  {0:d}".format(self.bytes['in'])
-    print "Duplicate Bytes In:  {0:d}".format(self.bytes['in_dup'])
+    global options
+    if options.json:
+      print(json.dumps(self.bytes, indent=2))
+    else:
+      print "Bytes Out: {0:d}".format(self.bytes['out'])
+      print "Bytes In:  {0:d}".format(self.bytes['in'])
+      print "Duplicate Bytes In:  {0:d}".format(self.bytes['in_dup'])
 
 
   def Process(self, pcap):
@@ -293,7 +300,7 @@ class Pcap():
 
   def ProcessPacketInfo(self, packet_info):
     elapsed = packet_info['time'] - self.start_time
-    bucket = int(math.floor(elapsed * 100))
+    bucket = int(math.floor(elapsed * 10))
 
     # Make sure the time slice lists in both directions are the same size and big enough to include the current bucket
     for direction in ['in', 'out', 'in_dup']:
@@ -345,6 +352,7 @@ class Pcap():
 #   Main Entry Point
 ########################################################################################################################
 def main():
+  global options
   import argparse
   parser = argparse.ArgumentParser(description='WebPageTest pcap parser.',
                                    prog='pcap-parser')
@@ -353,6 +361,7 @@ def main():
   parser.add_argument('-i', '--input', help="Input pcap file.")
   parser.add_argument('-s', '--stats', help="Output bandwidth information file.")
   parser.add_argument('-d', '--details', help="Output bandwidth details file (time sliced bandwidth data).")
+  parser.add_argument('-j', '--json', action='store_true', default=False, help="Set output format to JSON")
   options = parser.parse_args()
 
   # Set up logging
